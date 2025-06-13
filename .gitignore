@@ -5,6 +5,12 @@
 ## User settings
 xcuserdata/
 
+**/contents.xcworkspacedata
+
+project.pbxproj
+
+Screens.md
+
 **/.DS_Store
 ./.DS_Store
 
