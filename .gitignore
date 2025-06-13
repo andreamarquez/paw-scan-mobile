@@ -5,6 +5,12 @@
 ## User settings
 xcuserdata/
 
+**/.DS_Store
+./.DS_Store
+
+# project.pbxproj
+# contents.xcworkspacedata
+
 ## Obj-C/Swift specific
 *.hmap
 
