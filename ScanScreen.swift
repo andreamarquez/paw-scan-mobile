@@ -72,15 +72,58 @@ struct Product: Identifiable {
     let barcode: String
     let brand: String
     let rating: Int
-    let ingredients: [String]
+    let type: ProductType
+    let ingredients: [Ingredient]?
+    let foodEvaluation: [SubcategoryModalState]?
     
     static let mock = Product(
         name: "Healthy Pet Food",
         barcode: "1234567890123",
         brand: "PetBrand",
         rating: 4,
-        ingredients: ["Chicken", "Rice", "Carrots", "Vitamins"]
+        type: .petFood,
+        ingredients: [
+            Ingredient(name: "Chicken", status: .safe, description: "High-quality protein source."),
+            Ingredient(name: "Rice", status: .safe, description: "Easily digestible carbohydrate."),
+            Ingredient(name: "Carrots", status: .safe, description: "Rich in vitamins and fiber."),
+            Ingredient(name: "Vitamins", status: .safe, description: "Essential nutrients for health."),
+            Ingredient(name: "Artificial Color", status: .unsafe, description: "Not recommended for pets.")
+        ],
+        foodEvaluation: nil
     )
+    static let mockSupply = Product(
+        name: "Pet Water Bowl",
+        barcode: "9876543210987",
+        brand: "PetBrand",
+        rating: 5,
+        type: .petSupply,
+        ingredients: nil,
+        foodEvaluation: [
+            SubcategoryModalState(name: "Material Safety", description: "Safe for pets to use.", status: .safe),
+            SubcategoryModalState(name: "Durability", description: "Long-lasting and sturdy.", status: .safe),
+            SubcategoryModalState(name: "Ease of Cleaning", description: "Easy to clean and maintain.", status: .safe)
+        ]
+    )
+}
+
+enum ProductType: String, Codable {
+    case petFood, petSupply
+}
+
+struct Ingredient {
+    let name: String
+    let status: SafetyStatus
+    let description: String
+}
+
+enum SafetyStatus {
+    case safe, unsafe
+}
+
+struct SubcategoryModalState {
+    let name: String
+    let description: String
+    let status: SafetyStatus
 }
 
 struct ScanDetailScreen: View {
@@ -92,7 +135,9 @@ struct ScanDetailScreen: View {
                     .font(.title)
                 Text("Brand: \(product.brand)")
                 Text("Rating: \(product.rating) paws")
-                Text("Ingredients: \(product.ingredients.joined(separator: ", "))")
+                if let ingredients = product.ingredients {
+                    Text("Ingredients: \(ingredients.map { $0.name }.joined(separator: ", "))")
+                }
             } else {
                 Text("No product data.")
             }

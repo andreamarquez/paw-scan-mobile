@@ -1,106 +1,140 @@
 import SwiftUI
 
 struct ScanDetailScreen: View {
+    let product: Product?
+    var body: some View {
+        if let product = product {
+            ScanDetailScreenImpl(product: product)
+        } else {
+            Text("No product data.")
+                .navigationTitle("Product Overview")
+        }
+    }
+}
+
+struct ScanDetailScreenImpl: View {
     let product: Product
     @Environment(\.dismiss) private var dismiss
+    @State private var selectedIngredient: Ingredient? = nil
     var body: some View {
-        VStack(spacing: 0) {
-            // Top Section – Product Overview
-            VStack(spacing: 12) {
-                Image("product_placeholder")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 120, height: 120)
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                    .shadow(radius: 4)
-                    .padding(.top, 24)
-                Text(product.name)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .multilineTextAlignment(.center)
-                Text(product.brand)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                HStack(spacing: 4) {
-                    ForEach(0..<5) { i in
-                        Image(systemName: i < product.rating ? "pawprint.fill" : "pawprint")
-                            .foregroundColor(.orange)
+        ZStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Top Section – Product Overview
+                    VStack(spacing: 12) {
+                        Image(systemName: "photo")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 100, height: 100)
+                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                            .padding(.top, 16)
+                        Text(product.name)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .multilineTextAlignment(.center)
+                        Text(product.brand)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        HStack(spacing: 4) {
+                            ForEach(0..<5) { i in
+                                Image(systemName: i < product.rating ? "pawprint.fill" : "pawprint")
+                                    .foregroundColor(.orange)
+                            }
+                        }
                     }
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.bottom, 16)
-            
-            // Middle Section – Ingredients List
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Ingredients")
-                    .font(.headline)
-                    .padding(.bottom, 4)
-                ForEach(product.ingredients, id: \.name) { ingredient in
-                    HStack {
-                        Image(systemName: ingredient.status.iconName)
-                            .foregroundColor(ingredient.status.color)
-                        Text(ingredient.name)
-                            .font(.body)
+                    Divider()
+                    // Product Composition Section (no type check)
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Product Composition")
+                            .font(.headline)
+                        ForEach(product.ingredients ?? [], id: \.name) { ingredient in
+                            HStack {
+                                Image(systemName: ingredient.status.iconName)
+                                    .foregroundColor(ingredient.status.color)
+                                Text(ingredient.name)
+                                Spacer()
+                                Button(action: { selectedIngredient = ingredient }) {
+                                    Image(systemName: "info.circle")
+                                        .foregroundColor(.blue)
+                                }
+                            }
+                            .padding(.vertical, 4)
+                        }
                     }
+                    // Bottom Navigation Buttons
+                    HStack(spacing: 16) {
+                        Button(action: { dismiss() }) {
+                            Text("SCAN")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        Button(action: { /* Navigate to History */ }) {
+                            Text("History")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.blue)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                    }
+                    .padding([.horizontal, .bottom])
                 }
+                .padding()
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal)
-            .padding(.vertical, 16)
-            
-            Spacer()
-            
-            // Bottom Navigation Buttons
-            HStack(spacing: 16) {
-                Button(action: {
-                    dismiss()
-                }) {
-                    Text("SCAN")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
+            // Custom pop-in modal overlay
+            if let ingredient = selectedIngredient {
+                Color.black.opacity(0.4)
+                    .ignoresSafeArea()
+                    .onTapGesture { selectedIngredient = nil }
+                VStack(spacing: 24) {
+                    Image(systemName: ingredient.status.iconName)
+                        .resizable()
+                        .frame(width: 48, height: 48)
+                        .foregroundColor(ingredient.status.color)
+                        .padding(.top, 24)
+                    Text(ingredient.name)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                    Text(ingredient.description)
+                        .font(.body)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                    Button(action: { selectedIngredient = nil }) {
+                        Text("Close")
+                            .font(.headline)
+                            .padding(.horizontal, 32)
+                            .padding(.vertical, 10)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    Spacer(minLength: 0)
                 }
-                .buttonStyle(PlainButtonStyle())
-                Button(action: { /* Navigate to History */ }) {
-                    Text("History")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                }
-                .buttonStyle(PlainButtonStyle())
+                .frame(maxWidth: 320)
+                .padding()
+                .background(Color(.systemBackground))
+                .cornerRadius(20)
+                .shadow(radius: 20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .transition(.scale)
+                .zIndex(2)
             }
-            .padding([.horizontal, .bottom])
         }
         .navigationTitle("Product Overview")
     }
 }
 
-//struct Product {
-//    let name: String
-//    let brand: String
-//    let rating: Int // 0-5
-//    let ingredients: [Ingredient]
-//}
-
 #Preview {
-    ScanDetailScreen(product: Product(
-        name: "Organic Dog Food",
-        barcode: "1234567890123",
-        brand: "HealthyPets Co.",
-        rating: 3,
-        ingredients: [
-            Ingredient(name: "Chicken", status: .safe),
-            Ingredient(name: "Corn", status: .caution),
-            Ingredient(name: "Artificial Color", status: .unsafe),
-            Ingredient(name: "Rice", status: .safe),
-            Ingredient(name: "Salt", status: .caution)
-        ]
-    ))
+    ScanDetailScreenImpl(product: Product.mock)
 }

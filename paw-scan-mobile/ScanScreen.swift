@@ -78,70 +78,54 @@ struct ScanError: Identifiable {
 }
 
 
-// MARK: - Mock Models and Screens
+// MARK: - IngredientStatus and Ingredient
 
-struct Ingredient: Hashable {
-    let name: String
-    let status: IngredientStatus
-}
-
-enum IngredientStatus {
-    case safe, unsafe, caution
+enum IngredientStatus: String, Codable {
+    case safe, caution, unsafe
     var iconName: String {
         switch self {
         case .safe: return "checkmark.circle.fill"
-        case .unsafe: return "xmark.octagon.fill"
         case .caution: return "exclamationmark.triangle.fill"
+        case .unsafe: return "xmark.octagon.fill"
         }
     }
     var color: Color {
         switch self {
         case .safe: return .green
-        case .unsafe: return .red
         case .caution: return .yellow
+        case .unsafe: return .red
         }
     }
 }
 
-struct Product: Identifiable {
+struct Ingredient: Identifiable, Codable, Hashable {
+    let id = UUID()
+    let name: String
+    let status: IngredientStatus
+    let description: String
+}
+
+struct Product: Identifiable, Codable {
     let id = UUID()
     let name: String
     let barcode: String
     let brand: String
     let rating: Int
     let ingredients: [Ingredient]
-    
     static let mock = Product(
         name: "Healthy Pet Food",
         barcode: "1234567890123",
         brand: "PetBrand",
         rating: 4,
         ingredients: [
-            Ingredient(name: "Chicken", status: .safe),
-            Ingredient(name: "Rice", status: .safe),
-            Ingredient(name: "Carrots", status: .caution),
-            Ingredient(name: "Vitamins", status: .safe)
+            Ingredient(name: "Chicken", status: .safe, description: "High-quality protein source."),
+            Ingredient(name: "Rice", status: .safe, description: "Easily digestible carbohydrate."),
+            Ingredient(name: "Carrots", status: .safe, description: "Rich in vitamins and fiber."),
+            Ingredient(name: "Vitamins", status: .safe, description: "Essential nutrients for health."),
+            Ingredient(name: "Artificial Color", status: .unsafe, description: "Not recommended for pets.")
         ]
     )
 }
-
-//struct ScanDetailScreen: View {
-//    let product: Product?
-//    var body: some View {
-//        VStack {
-//            if let product = product {
-//                Text(product.name)
-//                    .font(.title)
-//                Text("Brand: \(product.brand)")
-//                Text("Rating: \(product.rating) paws")
-//                Text("Ingredients: \(product.ingredients.joined(separator: ", "))")
-//            } else {
-//                Text("No product data.")
-//            }
-//        }
-//        .navigationTitle("Product Overview")
-//    }
-//}
 
 struct HistoryScreen: View {
     var body: some View {
