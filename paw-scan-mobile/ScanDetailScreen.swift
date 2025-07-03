@@ -49,7 +49,7 @@ struct ScanDetailScreenImpl: View {
                             .font(.headline)
                         ForEach(product.ingredients ?? [], id: \.name) { ingredient in
                             HStack {
-                                Image(systemName: ingredient.status.iconName)
+                                Image(systemName: "circle.fill")
                                     .foregroundColor(ingredient.status.color)
                                 Text(ingredient.name)
                                 Spacer()
@@ -66,23 +66,23 @@ struct ScanDetailScreenImpl: View {
                         Button(action: { dismiss() }) {
                             Text("SCAN")
                                 .font(.headline)
-                                .frame(maxWidth: .infinity)
+                                .frame(maxWidth: 200)
                                 .padding()
                                 .background(Color.blue)
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        Button(action: { /* Navigate to History */ }) {
-                            Text("History")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(12)
-                        }
-                        .buttonStyle(PlainButtonStyle())
+//                        Button(action: { /* Navigate to History */ }) {
+//                            Text("History")
+//                                .font(.headline)
+//                                .frame(maxWidth: .infinity)
+//                                .padding()
+//                                .background(Color.blue)
+//                                .foregroundColor(.white)
+//                                .cornerRadius(12)
+//                        }
+//                        .buttonStyle(PlainButtonStyle())
                     }
                     .padding([.horizontal, .bottom])
                 }
@@ -94,7 +94,7 @@ struct ScanDetailScreenImpl: View {
                     .ignoresSafeArea()
                     .onTapGesture { selectedIngredient = nil }
                 VStack(spacing: 24) {
-                    Image(systemName: ingredient.status.iconName)
+                    Image(systemName: "circle.fill")
                         .resizable()
                         .frame(width: 48, height: 48)
                         .foregroundColor(ingredient.status.color)

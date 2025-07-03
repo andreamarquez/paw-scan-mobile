@@ -1,10 +1,45 @@
 import SwiftUI
+import AVFoundation
+
+struct BarcodeScannerView: UIViewControllerRepresentable {
+    class Coordinator: NSObject, AVCaptureMetadataOutputObjectsDelegate {
+        var parent: BarcodeScannerView
+        init(parent: BarcodeScannerView) { self.parent = parent }
+        func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
+            if let metadataObject = metadataObjects.first as? AVMetadataMachineReadableCodeObject,
+               let code = metadataObject.stringValue {
+                parent.completion(code)
+            }
+        }
+    }
+    var completion: (String) -> Void
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+    func makeUIViewController(context: Context) -> UIViewController {
+        let controller = UIViewController()
+        let session = AVCaptureSession()
+        guard let videoCaptureDevice = AVCaptureDevice.default(for: .video) else { return controller }
+        let videoInput = try? AVCaptureDeviceInput(device: videoCaptureDevice)
+        if let videoInput = videoInput, session.canAddInput(videoInput) { session.addInput(videoInput) }
+        let metadataOutput = AVCaptureMetadataOutput()
+        if session.canAddOutput(metadataOutput) { session.addOutput(metadataOutput) }
+        metadataOutput.setMetadataObjectsDelegate(context.coordinator, queue: DispatchQueue.main)
+        metadataOutput.metadataObjectTypes = [.ean8, .ean13, .qr, .code128, .upce, .code39, .code93, .pdf417, .aztec, .dataMatrix, .itf14]
+        let previewLayer = AVCaptureVideoPreviewLayer(session: session)
+        previewLayer.frame = UIScreen.main.bounds
+        previewLayer.videoGravity = .resizeAspectFill
+        controller.view.layer.addSublayer(previewLayer)
+        session.startRunning()
+        return controller
+    }
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}
 
 struct ScanScreen: View {
     @State private var isScanning = false
     @State private var showScanDetail = false
     @State private var scannedProduct: Product? = nil
-    @State private var scanError: ScanError? = nil // Use ScanError struct
+    @State private var scanError: ScanError? = nil
+    @State private var showScanner = false
 
     var body: some View {
         NavigationView {
@@ -17,16 +52,15 @@ struct ScanScreen: View {
                     .foregroundColor(.gray)
                     .padding()
                 Spacer()
-                Button(action: startScan) {
-                    Text(isScanning ? "Scanning..." : "Scan Product")
+                Button(action: { showScanner = true }) {
+                    Text("Scan Product")
                         .font(.headline)
-                        .frame(maxWidth: .infinity)
+                        .frame(maxWidth: 250)
                         .padding()
-                        .background(isScanning ? Color.gray : Color.blue)
+                        .background(Color.blue)
                         .foregroundColor(.white)
                         .cornerRadius(12)
                 }
-                .disabled(isScanning)
                 .padding(.horizontal)
                 .padding(.bottom, 8)
                 NavigationLink(destination: HistoryScreen()) {
@@ -47,6 +81,19 @@ struct ScanScreen: View {
             )
             .alert(item: $scanError) { error in
                 Alert(title: Text("Scan Failed"), message: Text(error.message), dismissButton: .default(Text("OK")))
+            }
+            .fullScreenCover(isPresented: $showScanner) {
+                BarcodeScannerView { code in
+                    showScanner = false
+                    // Here you would fetch product by barcode from backend
+                    // For now, mock: if code matches mock, show detail, else error
+                    if code == Product.mock.barcode {
+                        scannedProduct = Product.mock
+                        showScanDetail = true
+                    } else {
+                        scanError = ScanError(message: "Product not found for barcode: \(code)")
+                    }
+                }
             }
         }
     }
@@ -81,19 +128,14 @@ struct ScanError: Identifiable {
 // MARK: - IngredientStatus and Ingredient
 
 enum IngredientStatus: String, Codable {
-    case safe, caution, unsafe
-    var iconName: String {
-        switch self {
-        case .safe: return "checkmark.circle.fill"
-        case .caution: return "exclamationmark.triangle.fill"
-        case .unsafe: return "xmark.octagon.fill"
-        }
-    }
+    case excellent, good, fair, poor
+    
     var color: Color {
         switch self {
-        case .safe: return .green
-        case .caution: return .yellow
-        case .unsafe: return .red
+        case .excellent: return Color.green.opacity(0.8)                  // Kept the green
+        case .good: return Color.green.opacity(0.3)     // Same green but faded
+        case .fair: return Color.red.opacity(0.3)       // Red but faded
+        case .poor: return Color.red.opacity(0.8)           // Kept the red
         }
     }
 }
@@ -114,15 +156,16 @@ struct Product: Identifiable, Codable {
     let ingredients: [Ingredient]
     static let mock = Product(
         name: "Healthy Pet Food",
-        barcode: "1234567890123",
+        barcode: "3337875803786",
         brand: "PetBrand",
         rating: 4,
         ingredients: [
-            Ingredient(name: "Chicken", status: .safe, description: "High-quality protein source."),
-            Ingredient(name: "Rice", status: .safe, description: "Easily digestible carbohydrate."),
-            Ingredient(name: "Carrots", status: .safe, description: "Rich in vitamins and fiber."),
-            Ingredient(name: "Vitamins", status: .safe, description: "Essential nutrients for health."),
-            Ingredient(name: "Artificial Color", status: .unsafe, description: "Not recommended for pets.")
+            Ingredient(name: "Chicken", status: .excellent, description: "High-quality protein source."),
+            Ingredient(name: "Rice", status: .good, description: "Easily digestible carbohydrate."),
+            Ingredient(name: "Carrots", status: .excellent, description: "Rich in vitamins and fiber."),
+            Ingredient(name: "Vitamins", status: .excellent, description: "Essential nutrients for health."),
+            Ingredient(name: "Chemical X", status: .fair, description: "May give superpowers."),
+            Ingredient(name: "Artificial Color", status: .poor, description: "Not recommended for pets.")
         ]
     )
 }
