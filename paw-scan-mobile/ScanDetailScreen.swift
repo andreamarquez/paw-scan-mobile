@@ -22,12 +22,29 @@ struct ScanDetailScreenImpl: View {
                 VStack(spacing: 24) {
                     // Top Section – Product Overview
                     VStack(spacing: 12) {
-                        Image(systemName: "photo")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 100, height: 100)
-                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                        if let imageUrl = product.imageUrl, let url = URL(string: imageUrl) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .empty:
+                                    ProgressView()
+                                        .frame(width: 100, height: 100)
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 100, height: 100)
+                                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                                case .failure(_):
+                                    ProductAvatarView(name: product.name)
+                                @unknown default:
+                                    ProductAvatarView(name: product.name)
+                                }
+                            }
                             .padding(.top, 16)
+                        } else {
+                            ProductAvatarView(name: product.name)
+                                .padding(.top, 16)
+                        }
                         Text(product.name)
                             .font(.title2)
                             .fontWeight(.bold)
@@ -37,17 +54,17 @@ struct ScanDetailScreenImpl: View {
                             .foregroundColor(.secondary)
                         HStack(spacing: 4) {
                             ForEach(0..<5) { i in
-                                Image(systemName: i < product.rating ? "pawprint.fill" : "pawprint")
+                                Image(systemName: i < Int(product.rating) ? "pawprint.fill" : "pawprint")
                                     .foregroundColor(.orange)
                             }
                         }
                     }
                     Divider()
-                    // Product Composition Section (no type check)
+                    // Product Composition Section
                     VStack(alignment: .leading, spacing: 8) {
                         Text("Product Composition")
                             .font(.headline)
-                        ForEach(product.ingredients ?? [], id: \.name) { ingredient in
+                        ForEach(product.ingredients, id: \.id) { ingredient in
                             HStack {
                                 Image(systemName: "circle.fill")
                                     .foregroundColor(ingredient.status.color)
@@ -132,6 +149,20 @@ struct ScanDetailScreenImpl: View {
             }
         }
         .navigationTitle("Product Overview")
+    }
+}
+
+struct ProductAvatarView: View {
+    let name: String
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.gray.opacity(0.2))
+                .frame(width: 100, height: 100)
+            Text(String(name.prefix(1)).uppercased())
+                .font(.largeTitle)
+                .foregroundColor(.blue)
+        }
     }
 }
 
